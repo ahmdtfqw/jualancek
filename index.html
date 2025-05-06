@@ -196,9 +196,14 @@
     display: flex;
     justify-content: space-between;
     color: #1c1c1e;
+
+    /* Add wrap and gap for better layout on small screens */
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
   }
   .summary div {
-    min-width: 30%;
+    min-width: 100px;
+    flex-grow: 1;
     text-align: center;
   }
   .summary div span.amount {
@@ -207,6 +212,7 @@
     font-size: 1.5rem;
     margin-top: 0.3rem;
     letter-spacing: -0.02em;
+    white-space: nowrap;
   }
   .summary div.total {
     color: #007aff;
@@ -217,11 +223,47 @@
   .summary div.balance {
     color: #34c759;
   }
+  .daily-summary-wrapper {
+    width: 100%;
+    max-width: 350px;
+    overflow-x: auto;
+    margin-bottom: 2rem;
+    -webkit-overflow-scrolling: touch;
+  }
+  .daily-summary-table {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: separate;
+    border-spacing: 0 6px;
+    background: transparent;
+  }
+  .daily-summary-table th,
+  .daily-summary-table td {
+    text-align: left;
+    padding: 0.6rem 1rem;
+    font-size: 0.95rem;
+  }
+  .daily-summary-table th {
+    font-weight: 700;
+    background-color: #007aff;
+    color: white;
+    border-radius: 12px;
+  }
+  .daily-summary-table tbody tr {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  .daily-summary-table tbody tr td.right {
+    text-align: right;
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+  }
   @media (max-width: 400px) {
     body {
       padding: 0.8rem;
     }
-    form, .table-wrapper, .summary {
+    form, .table-wrapper, .summary, .daily-summary-wrapper {
       max-width: 100%;
     }
     thead th,
@@ -233,9 +275,14 @@
       font-size: 1rem;
       padding: 0.7rem;
     }
+    /* On very narrow devices force vertical stack with spacing */
     .summary {
-      flex-direction: column;
-      gap: 0.6rem;
+      font-size: 1rem;
+    }
+    .summary div {
+      min-width: unset;
+      flex-grow: unset;
+      flex-basis: 100%;
     }
   }
 </style>
@@ -343,6 +390,24 @@
   </div>
 </div>
 
+<!-- Daily Summary Section -->
+<h2>Ringkasan Harian</h2>
+<div class="daily-summary-wrapper" aria-label="Ringkasan total harian penjualan dan pengeluaran">
+  <table class="daily-summary-table">
+    <thead>
+      <tr>
+        <th>Tanggal</th>
+        <th>Total Penjualan (Rp)</th>
+        <th>Total Pengeluaran (Rp)</th>
+        <th>Saldo Bersih (Rp)</th>
+      </tr>
+    </thead>
+    <tbody id="daily-summary-body">
+      <!-- daily summary rows get inserted here -->
+    </tbody>
+  </table>
+</div>
+
 <script>
   // Sales elements
   const salesForm = document.getElementById('sales-form');
@@ -365,6 +430,9 @@
   const summarySalesEl = document.getElementById('summary-sales');
   const summaryExpenseEl = document.getElementById('summary-expense');
   const summaryBalanceEl = document.getElementById('summary-balance');
+
+  // Daily summary
+  const dailySummaryBody = document.getElementById('daily-summary-body');
 
   let salesNotes = [];
   let expenses = [];
@@ -437,6 +505,51 @@
     summaryBalanceEl.textContent = formatCurrency(balance);
   }
 
+  // Render daily summary table for totals per day
+  function renderDailySummary() {
+    // Collect all unique dates from sales and expenses
+    const datesSet = new Set();
+    salesNotes.forEach(s => datesSet.add(s.date));
+    expenses.forEach(e => datesSet.add(e.date));
+    const dates = Array.from(datesSet).sort();
+
+    // Prepare daily totals map: key=date, value={sales: 0, expenses:0}
+    const dailyTotals = {};
+    dates.forEach(d => {
+      dailyTotals[d] = { sales: 0, expenses: 0 };
+    });
+
+    // Sum sales by date
+    salesNotes.forEach(s => {
+      if(dailyTotals[s.date]) {
+        dailyTotals[s.date].sales += s.quantity * s.price;
+      }
+    });
+
+    // Sum expenses by date
+    expenses.forEach(e => {
+      if(dailyTotals[e.date]) {
+        dailyTotals[e.date].expenses += e.amount;
+      }
+    });
+
+    // Build table rows
+    dailySummaryBody.innerHTML = '';
+    dates.forEach(d => {
+      const sales = dailyTotals[d].sales;
+      const expenses = dailyTotals[d].expenses;
+      const balance = sales - expenses;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${d}</td>
+        <td class="right">${formatCurrency(sales)}</td>
+        <td class="right">${formatCurrency(expenses)}</td>
+        <td class="right">${formatCurrency(balance)}</td>
+      `;
+      dailySummaryBody.appendChild(tr);
+    });
+  }
+
   // Add new sales note from form
   salesForm.addEventListener('submit', function(e) {
     e.preventDefault();
@@ -453,10 +566,10 @@
     salesNotes.push({ date, item, quantity, price });
     saveData();
     renderSales();
+    renderDailySummary();
     updateBalance();
 
     salesForm.reset();
-    // Set date back to today for convenience
     const today = new Date().toISOString().substr(0, 10);
     salesDateInput.value = today;
     quantityInput.value = 1;
@@ -479,10 +592,10 @@
     expenses.push({ date, description, amount });
     saveData();
     renderExpenses();
+    renderDailySummary();
     updateBalance();
 
     expenseForm.reset();
-    // Set date back to today for convenience
     const today = new Date().toISOString().substr(0, 10);
     expenseDateInput.value = today;
     expenseAmountInput.value = 0;
@@ -504,6 +617,7 @@
           saveData();
           renderSales();
           renderExpenses();
+          renderDailySummary();
           updateBalance();
         }
       }
@@ -515,8 +629,8 @@
     loadData();
     renderSales();
     renderExpenses();
+    renderDailySummary();
     updateBalance();
-    // Set default dates to today
     const today = new Date().toISOString().substr(0, 10);
     salesDateInput.value = today;
     expenseDateInput.value = today;
