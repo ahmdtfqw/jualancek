@@ -98,13 +98,22 @@
     background: #0042a8;
     box-shadow: none;
   }
+
+  /* Scroll wrapper for tables */
+  .table-wrapper {
+    width: 100%;
+    max-width: 350px;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  }
+
   table {
     border-collapse: separate;
     border-spacing: 0 8px;
     width: 100%;
-    max-width: 350px;
+    min-width: 600px; /* let it scroll horizontally if needed */
     background: transparent;
-    margin-bottom: 1.5rem;
   }
   thead tr {
     border-bottom: none;
@@ -114,6 +123,7 @@
     font-size: 0.95rem;
     color: #3c3c4399;
     text-align: left;
+    padding: 0.5rem 1rem;
   }
   thead.expenditure th {
     color: #d9534f;
@@ -211,7 +221,7 @@
     body {
       padding: 0.8rem;
     }
-    form, table, .summary {
+    form, .table-wrapper, .summary {
       max-width: 100%;
     }
     thead th,
@@ -255,26 +265,28 @@
   <button type="submit" aria-label="Tambah catatan penjualan">Tambah Catatan</button>
 </form>
 
-<table aria-label="Daftar Catatan Penjualan">
-  <thead>
-    <tr>
-      <th>Tanggal</th>
-      <th>Barang</th>
-      <th class="right">Jumlah</th>
-      <th class="right">Harga Satuan (Rp)</th>
-      <th class="right">Total (Rp)</th>
-      <th>Aksi</th>
-    </tr>
-  </thead>
-  <tbody id="sales-list"></tbody>
-  <tfoot>
-    <tr>
-      <td colspan="4" class="right">Total Penjualan</td>
-      <td class="right" id="total-sales">Rp0</td>
-      <td></td>
-    </tr>
-  </tfoot>
-</table>
+<div class="table-wrapper">
+  <table aria-label="Daftar Catatan Penjualan">
+    <thead>
+      <tr>
+        <th>Tanggal</th>
+        <th>Barang</th>
+        <th class="right">Jumlah</th>
+        <th class="right">Harga Satuan (Rp)</th>
+        <th class="right">Total (Rp)</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody id="sales-list"></tbody>
+    <tfoot>
+      <tr>
+        <td colspan="4" class="right">Total Penjualan</td>
+        <td class="right" id="total-sales">Rp0</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
 
 <!-- Expenditure Section -->
 <h2>Pengeluaran</h2>
@@ -294,24 +306,26 @@
   <button type="submit" aria-label="Tambah catatan pengeluaran">Tambah Pengeluaran</button>
 </form>
 
-<table aria-label="Daftar Catatan Pengeluaran">
-  <thead class="expenditure">
-    <tr>
-      <th>Tanggal</th>
-      <th>Keterangan</th>
-      <th class="right">Jumlah (Rp)</th>
-      <th>Aksi</th>
-    </tr>
-  </thead>
-  <tbody id="expense-list"></tbody>
-  <tfoot>
-    <tr>
-      <td colspan="2" class="right">Total Pengeluaran</td>
-      <td class="right" id="total-expense">Rp0</td>
-      <td></td>
-    </tr>
-  </tfoot>
-</table>
+<div class="table-wrapper">
+  <table aria-label="Daftar Catatan Pengeluaran">
+    <thead class="expenditure">
+      <tr>
+        <th>Tanggal</th>
+        <th>Keterangan</th>
+        <th class="right">Jumlah (Rp)</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody id="expense-list"></tbody>
+    <tfoot>
+      <tr>
+        <td colspan="2" class="right">Total Pengeluaran</td>
+        <td class="right" id="total-expense">Rp0</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
 
 <!-- Summary Section -->
 <div class="summary" aria-label="Ringkasan penjualan dan pengeluaran">
